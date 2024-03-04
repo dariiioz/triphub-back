@@ -153,4 +153,78 @@ router.put(
     }
 );
 
+router.post(
+    "/addDocument",
+    checkBodyMiddleware(["token", "title", "link_doc", "serial_phone"]),
+    async (req, res) => {
+        const { token, title, link_doc, tripId, serial_phone } = req.body;
+        const user = await User.findOne({ token: token });
+        if (!user) {
+            return res.status(400).json({
+                result: false,
+                error: "Invalid token.",
+            });
+        }
+
+        user.documents.push({
+            title: title,
+            link_doc: link_doc,
+            linked_trip: tripId,
+            serial_phone: serial_phone,
+        });
+
+        await user.save();
+
+        const updatedUser = await User.findOne({ token: token });
+        res.json({
+            result: true,
+            documents: updatedUser.documents,
+        });
+    }
+);
+
+router.get("/documents", checkBodyMiddleware(["token"]), async (req, res) => {
+    const { token } = req.body;
+    const user = await User.findOne({ token: token });
+    if (!user) {
+        return res.status(400).json({
+            result: false,
+            error: "Invalid token.",
+        });
+    }
+
+    res.json({
+        result: true,
+        documents: user.documents,
+    });
+});
+
+router.delete(
+    "/deleteDocument",
+    checkBodyMiddleware(["token", "documentId"]),
+    async (req, res) => {
+        const { token, documentId } = req.body;
+        const user = await User.findOne({
+            token: token,
+        });
+        if (!user) {
+            return res.status(400).json({
+                result: false,
+                error: "Invalid token.",
+            });
+        }
+
+        user.documents = user.documents.filter(
+            (document) => document._id != documentId
+        );
+        await user.save();
+
+        const updatedUser = await User.findOne({ token: token });
+        res.json({
+            result: true,
+            documents: updatedUser.documents,
+        });
+    }
+);
+
 module.exports = router;

@@ -67,7 +67,7 @@ router.post(
 );
 
 router.get("/getTrips/:token", async (req, res) => {
-    const { token } = req.params.token;
+    const token = req.params.token;
 
     // Check if the user is logged in and if the token is valid
     const userInfos = await User.findOne({ token }).populate({

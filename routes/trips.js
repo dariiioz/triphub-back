@@ -3,6 +3,7 @@ let router = express.Router();
 const Trip = require("../models/trip");
 const User = require("../models/user");
 const { checkBodyMiddleware } = require("../middlewares/checkBody");
+const Country = require("../models/country-info");
 
 router.post(
     "/create",
@@ -16,6 +17,13 @@ router.post(
         );
         if (!userInfos) {
             res.status(401).json({ message: "Unauthorized" });
+            return;
+        }
+
+        //get country infos
+        const countryInfos = await Country.findOne({ country: country });
+        if (!countryInfos) {
+            res.status(404).json({ message: "Country not found" });
             return;
         }
 
@@ -38,6 +46,7 @@ router.post(
             end_at: date_end,
             createdBy: userInfos._id,
             invitation_link: generateInvitationCode(),
+            sos_infos: countryInfos._id,
         });
 
         // Save the trip
@@ -48,7 +57,10 @@ router.post(
 
         await userInfos.save();
 
-        const user = await User.findById(userInfos._id).populate("trips");
+        const user = await User.findById(userInfos._id).populate({
+            path: "trips",
+            populate: { path: "sos_infos" },
+        });
 
         res.status(200).json({ result: true, data: user.trips });
     }
@@ -58,7 +70,10 @@ router.get("/getTrips", checkBodyMiddleware(["token"]), async (req, res) => {
     const { token } = req.body;
 
     // Check if the user is logged in and if the token is valid
-    const userInfos = await User.findOne({ token }).populate("trips");
+    const userInfos = await User.findOne({ token }).populate({
+        path: "trips",
+        populate: { path: "sos_infos" },
+    });
     if (!userInfos) {
         res.status(401).json({ error: "Unauthorized" });
         return;
@@ -74,36 +89,33 @@ router.delete(
     async (req, res) => {
         const { tripId, token } = req.body;
 
-        // Check if the user is logged in and if the token is valid
         const user = await User.findOne({ token: token }).populate("trips");
         if (!user) {
-            res.status(401).json({ error: "Unauthorized" });
-            return;
+            return res.status(401).json({ error: "Unauthorized" });
         }
 
-        // Check if the trip exists
         const trip = await Trip.findById(tripId);
         if (!trip) {
-            res.status(404).json({ error: "Trip not found" });
-            return;
+            return res.status(404).json({ error: "Trip not found" });
         }
 
-        // Check if the user is the creator of the trip
         if (trip.createdBy.toString() !== user._id.toString()) {
-            res.status(401).json({ error: "Unauthorized" });
-            return;
+            return res.status(401).json({ error: "Unauthorized" });
         }
 
-        // Delete the trip
         await Trip.findByIdAndDelete(tripId);
 
-        // Remove the trip from the user's trips
-        user.trips = user.trips.filter(
-            (trip) => trip._id.toString() !== tripId.toString()
+        await User.updateMany(
+            { "shareWith.trip": tripId },
+            { $pull: { shareWith: { trip: tripId } } }
         );
-        await user.save();
 
-        res.status(200).json({ result: true, trips: user.trips });
+        await User.updateMany({ trips: tripId }, { $pull: { trips: tripId } });
+
+        res.status(200).json({
+            result: true,
+            message: "Trip and references deleted successfully",
+        });
     }
 );
 
@@ -114,7 +126,10 @@ router.post(
         const { tripId, title, plannedAt, token, note, address } = req.body;
 
         // Check if the user is logged in and if the token is valid
-        const user = await User.findOne({ token: token }).populate("trips");
+        const user = await User.findOne({ token }).populate({
+            path: "trips",
+            populate: { path: "sos_infos" },
+        });
 
         if (!user) {
             res.status(401).json({ error: "Unauthorized" });
@@ -158,7 +173,10 @@ router.delete(
         const { tripId, activityId, token } = req.body;
 
         // Check if the user is logged in and if the token is valid
-        const user = await User.findOne({ token: token }).populate("trips");
+        const user = await User.findOne({ token }).populate({
+            path: "trips",
+            populate: { path: "sos_infos" },
+        });
         if (!user) {
             res.status(401).json({ message: "Unauthorized" });
             return;
@@ -194,7 +212,10 @@ router.put(
         const { tripId, activityId, note, token } = req.body;
 
         // Check if the user is logged in and if the token is valid
-        const user = await User.findOne({ token: token }).populate("trips");
+        const user = await User.findOne({ token }).populate({
+            path: "trips",
+            populate: { path: "sos_infos" },
+        });
         if (!user) {
             res.status(401).json({ message: "Unauthorized" });
             return;
@@ -231,7 +252,10 @@ router.delete(
         const { tripId, activityId, note, token } = req.body;
 
         // Check if the user is logged in and if the token is valid
-        const user = await User.findOne({ token: token }).populate("trips");
+        const user = await User.findOne({ token }).populate({
+            path: "trips",
+            populate: { path: "sos_infos" },
+        });
         if (!user) {
             res.status(401).json({ error: "Unauthorized" });
             return;
@@ -269,7 +293,10 @@ router.put(
         const { token } = req.body;
 
         // Check if the user is logged in and if the token is valid
-        const user = await User.findOne({ token: token }).populate("trips");
+        const user = await User.findOne({ token }).populate({
+            path: "trips",
+            populate: { path: "sos_infos" },
+        });
         if (!user) {
             res.status(401).json({ error: "Unauthorized" });
             return;

@@ -29,5 +29,5 @@ const countryInfoSchema = new Schema({
 });
 
 // Export du modèle CountryInfo
-const CountryInfo = mongoose.model("CountriesInfos", countryInfoSchema);
-module.exports = CountryInfo;
+const Country = mongoose.model("CountriesInfos", countryInfoSchema);
+module.exports = Country;

@@ -227,4 +227,25 @@ router.delete(
     }
 );
 
+router.delete(
+    "/deleteAccount",
+    checkBodyMiddleware(["token"]),
+    async (req, res) => {
+        const { token } = req.body;
+        const user = await User.findOne({ token: token });
+        if (!user) {
+            return res.status(400).json({
+                result: false,
+                error: "Invalid token.",
+            });
+        }
+
+        await user.delete();
+
+        res.json({
+            result: true,
+        });
+    }
+);
+
 module.exports = router;

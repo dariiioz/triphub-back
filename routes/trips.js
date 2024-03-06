@@ -122,10 +122,13 @@ router.delete(
 
         await User.updateMany({ trips: tripId }, { $pull: { trips: tripId } });
 
-        res.status(200).json({
-            result: true,
-            message: "Trip and references deleted successfully",
+        const updatedUser = await User.findById(user._id).populate({
+            path: "trips",
+            populate: { path: "sos_infos" },
         });
+
+        res.status(200).json({ result: true, data: updatedUser.trips });
+
     }
 );
 

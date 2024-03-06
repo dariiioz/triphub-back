@@ -19,7 +19,7 @@ const tripSchema = new Schema({
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
     shareWith: [{ type: Schema.Types.ObjectId, ref: "User" }],
     activities: [activitySchema],
-    sos_infos: [{ type: Schema.Types.ObjectId, ref: "CountriesInfos" }],
+    sos_infos: { type: Schema.Types.ObjectId, ref: "CountriesInfos" },
     invitation_link: { type: String },
 });
 

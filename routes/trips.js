@@ -79,8 +79,18 @@ router.get("/getTrips/:token", async (req, res) => {
         return;
     }
 
-    // send the user's trips
-    res.status(200).json({ result: true, data: userInfos.trips });
+    const updateUser = await User.findById(userInfos._id).populate({
+        path: "trips",
+        populate: { path: "sos_infos" },
+
+    }).populate({
+        path: "trips",
+        populate: { path: "shareWith" },
+    });
+
+    res.status(200).json({ result: true, data: updateUser.trips });
+    
+
 });
 
 router.delete(

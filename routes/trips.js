@@ -146,11 +146,11 @@ router.post(
     }
 
     // // Check if the trip exists
-    // const trip = await Trip.findById(tripId);
-    // if (!trip) {
-    //   res.status(404).json({ error: "Trip not found" });
-    //   return;
-    // }
+    const trip = await Trip.findById(tripId);
+    if (!trip) {
+       res.status(404).json({ error: "Trip not found" });
+       return;
+    }
 
     // Check if the user is the creator of the trip
     if (trip.createdBy.toString() !== user._id.toString()) {

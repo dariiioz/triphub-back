@@ -171,7 +171,11 @@ router.post(
     // Save the trip
     await trip.save();
 
-    res.status(200).json({ result: true, trip: trip });
+    const updatedUser = await User.findById(user._id).populate({
+      path: "trips",
+      populate: { path: "sos_infos" },
+    });
+    res.status(200).json({ result: true, data: updatedUser.trips });
   }
 );
 

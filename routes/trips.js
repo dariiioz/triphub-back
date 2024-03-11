@@ -4,9 +4,9 @@ const Trip = require("../models/trip");
 const User = require("../models/user");
 const { checkBodyMiddleware } = require("../middlewares/checkBody");
 const Country = require("../models/country-info");
-const uniqid = require('uniqid')
-const cloudinary = require('cloudinary').v2
-const fs = require('fs')
+const uniqid = require("uniqid");
+const cloudinary = require("cloudinary").v2;
+const fs = require("fs");
 
 router.post(
   "/create",
@@ -151,8 +151,8 @@ router.post(
     // // Check if the trip exists
     const trip = await Trip.findById(tripId);
     if (!trip) {
-       res.status(404).json({ error: "Trip not found" });
-       return;
+      res.status(404).json({ error: "Trip not found" });
+      return;
     }
 
     // Check if the user is the creator of the trip
@@ -339,50 +339,69 @@ router.put(
   }
 );
 
-router.put('/uploadImage',
-  checkBodyMiddleware(["tripId"]),
+router.post("/uploadImage", async (req, res) => {
+  console.log(req.files);
+  //Create temporary file with unique id for photo
+  const photoPath = `./tmp/${uniqid()}.jpg`;
+
+  //Attempt to move the file
+  const resultMove = await req.files.photoFromFront.mv(photoPath);
+
+  //If successful (move is empty)
+  if (!resultMove) {
+    const resultCloudinary = await cloudinary.uploader.upload(photoPath);
+
+    //Deleting temporary photo file
+    fs.unlinkSync(photoPath);
+    res.json({ result: true, url: resultCloudinary.secure_url });
+  } else {
+    res.json({ result: false, error: resultMove });
+  }
+});
+
+router.put(
+  "/updateImage",
+  checkBodyMiddleware(["tripId", "token", "background_url"]),
   async (req, res) => {
-  
-    const { tripId } = req.body;
+    const { tripId, token, background_url } = req.body;
 
-    //Create temporary file with unique id for photo
-    const photoPath = `./tmp/${uniqid()}.jpg`
+    // Check if the user is logged in and if the token is valid
+    const user = await User.findOne({
+      token: token,
+    }).populate({
+      path: "trips",
+      populate: { path: "sos_infos" },
+    });
 
-    //Attempt to move the file
-    const resultMove = await req.files.photoFromFront.mv(photoPath)
-
-
-    //If successful (move is empty)
-    if(!resultMove) {
-
-      //Check if Trip Exist and initialize it
-      const trip = await Trip.findById(tripId);
-      if (!trip) {
-        res.status(404).json({ error: "Trip not found" });
-        return;
-      } 
-      else {
-        //Uploading to Cloudinary
-        const resultCloudinary = await cloudinary.uploader.upload(photoPath)
-
-        //Modifying background_url of the associated trip
-        trip.background_url = resultCloudinary.secure_url
-
-        //Saving the trip
-        await trip.save();
-
-        //Deleting temporary photo file
-        fs.unlinkSync(photoPath)
-        res.json({result: true, url: resultCloudinary.secure_url})   
-      }
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
     }
 
-    //If Move was unsuccessful
-    else {
-      res.json({result: false, error: resultMove})
+    // Check if the trip exists
+    const trip = await Trip.findById(tripId);
+    if (!trip) {
+      res.status(404).json({ error: "Trip not found" });
+      return;
     }
 
-})
+    // Update the trip's background_url
+    trip.background_url = background_url;
+    await trip.save();
+
+    const updateUser = await User.findById(user._id)
+      .populate({
+        path: "trips",
+        populate: { path: "sos_infos" },
+      })
+      .populate({
+        path: "trips",
+        populate: { path: "shareWith" },
+      });
+
+    res.status(200).json({ result: true, data: updateUser.trips });
+  }
+);
 
 function generateInvitationCode(length = 8) {
   const characters =

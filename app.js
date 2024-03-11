@@ -6,6 +6,7 @@ var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const fileUpload = require("express-fileupload");
 
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
@@ -15,8 +16,10 @@ const countriesInfosRouter = require("./routes/countries-infos");
 var app = express();
 
 app.use(cors());
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(fileUpload());
 
 app.use(logger("dev"));
 app.use(express.json());

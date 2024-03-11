@@ -249,7 +249,7 @@ router.delete(
       });
     }
 
-    await user.delete();
+    await User.deleteOne({ _id: user._id });
 
     res.json({
       result: true,

@@ -4,6 +4,9 @@ const Trip = require("../models/trip");
 const User = require("../models/user");
 const { checkBodyMiddleware } = require("../middlewares/checkBody");
 const Country = require("../models/country-info");
+const uniqid = require('uniqid')
+const cloudinary = require('cloudinary').v2
+const fs = require('fs')
 
 router.post(
   "/create",
@@ -335,6 +338,51 @@ router.put(
     res.status(200).json({ result: true, trips: user.trips });
   }
 );
+
+router.put('/uploadImage',
+  checkBodyMiddleware(["tripId"]),
+  async (req, res) => {
+  
+    const { tripId } = req.body;
+
+    //Create temporary file with unique id for photo
+    const photoPath = `./tmp/${uniqid()}.jpg`
+
+    //Attempt to move the file
+    const resultMove = await req.files.photoFromFront.mv(photoPath)
+
+
+    //If successful (move is empty)
+    if(!resultMove) {
+
+      //Check if Trip Exist and initialize it
+      const trip = await Trip.findById(tripId);
+      if (!trip) {
+        res.status(404).json({ error: "Trip not found" });
+        return;
+      } 
+      else {
+        //Uploading to Cloudinary
+        const resultCloudinary = await cloudinary.uploader.upload(photoPath)
+
+        //Modifying background_url of the associated trip
+        trip.background_url = resultCloudinary.secure_url
+
+        //Saving the trip
+        await trip.save();
+
+        //Deleting temporary photo file
+        fs.unlinkSync(photoPath)
+        res.json({result: true, url: resultCloudinary.secure_url})   
+      }
+    }
+
+    //If Move was unsuccessful
+    else {
+      res.json({result: false, error: resultMove})
+    }
+
+})
 
 function generateInvitationCode(length = 8) {
   const characters =

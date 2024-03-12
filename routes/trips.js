@@ -222,6 +222,76 @@ router.delete(
 );
 
 router.put(
+  "/editActivity",
+  checkBodyMiddleware(["tripId", "activityId", "token"]),
+  async (req, res) => {
+    const { tripId, activityId, token, title, plannedAt, address, note } =
+      req.body;
+
+    // Check if the user is logged in and if the token is valid
+    const user = await User.findOne({ token }).populate({
+      path: "trips",
+      populate: { path: "sos_infos" },
+    });
+
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    // Check if the trip exists
+
+    const trip = await Trip.findById(tripId);
+
+    if (!trip) {
+      res.status(404).json({ error: "Trip not found" });
+      return;
+    }
+
+    // Check if the user is the creator of the trip
+    if (trip.createdBy.toString() !== user._id.toString()) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    // Edit the activity
+    const activity = trip.activities.id(activityId);
+
+    if (title) {
+      activity.title = title;
+    }
+
+    if (plannedAt) {
+      activity.plannedAt = new Date(plannedAt);
+    }
+
+    if (address) {
+      activity.address = address;
+    }
+
+    if (note) {
+      activity.notes = note;
+    }
+
+    // Save the trip
+
+    await trip.save();
+
+    const updateUser = await User.findById(user._id)
+      .populate({
+        path: "trips",
+        populate: { path: "sos_infos" },
+      })
+      .populate({
+        path: "trips",
+        populate: { path: "shareWith" },
+      });
+
+    res.status(200).json({ result: true, data: updateUser.trips });
+  }
+);
+
+router.put(
   "/addNote",
   checkBodyMiddleware(["tripId", "activityId", "note", "token"]),
   async (req, res) => {

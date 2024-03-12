@@ -4,6 +4,8 @@ const Schema = mongoose.Schema;
 // Sous-document pour les consulats
 const consulateSchema = new Schema({
     address: { type: String },
+    latitude: { type: String },
+    longitude: { type: String },
     phone: { type: String },
     email: { type: String },
     emergency_phone: { type: String },
@@ -12,6 +14,8 @@ const consulateSchema = new Schema({
 // Schéma du modèle pour les informations sur l'ambassade
 const embassySchema = new Schema({
     address: { type: String },
+    latitude: { type: String },
+    longitude: { type: String },
     phone: { type: String },
     email: { type: String },
     emergency_phone: { type: String },

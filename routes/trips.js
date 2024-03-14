@@ -469,7 +469,7 @@ router.put(
 router.post("/uploadImage", async (req, res) => {
   console.log(req.files);
   //Create temporary file with unique id for photo
-  const photoPath = `./uploadImage/${uniqid()}.jpg`;
+  const photoPath = `/tmp/${uniqid()}.jpg`;
 
   //Attempt to move the file
   const resultMove = await req.files.photoFromFront.mv(photoPath);

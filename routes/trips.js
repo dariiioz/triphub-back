@@ -109,25 +109,78 @@ router.delete(
       return res.status(404).json({ error: "Trip not found" });
     }
 
-    if (trip.createdBy.toString() !== user._id.toString()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    // console.log(trip.createdBy.toString());
+    // console.log(user._id.toString());
+    // console.log(trip.shareWith.includes(user._id.toString()));
+    // if (
+    //   trip.createdBy.toString() != user._id.toString ||
+    //   !trip.shareWith.includes(user._id.toString())
+    // ) {
+    //   return res.status(401).json({ error: "Unauthorized" });
+    // }
+
+    let result;
+    if (trip.createdBy.toString() === user._id.toString()) {
+      result = await Trip.findByIdAndDelete(tripId);
+      await User.updateMany(
+        { "shareWith.trip": tripId },
+        { $pull: { shareWith: { trip: tripId } } }
+      );
+      await User.updateMany({ trips: tripId }, { $pull: { trips: tripId } });
+    } else {
+      trip.shareWith = trip.shareWith.filter(
+        (userId) => userId.toString() !== user._id.toString()
+      );
+      await trip.save();
+      await User.updateOne({ _id: user._id }, { $pull: { trips: tripId } });
     }
-
-    await Trip.findByIdAndDelete(tripId);
-
-    await User.updateMany(
-      { "shareWith.trip": tripId },
-      { $pull: { shareWith: { trip: tripId } } }
-    );
-
-    await User.updateMany({ trips: tripId }, { $pull: { trips: tripId } });
 
     const updatedUser = await User.findById(user._id).populate({
       path: "trips",
       populate: { path: "sos_infos" },
     });
 
-    res.status(200).json({ result: true, data: updatedUser.trips });
+    res.status(200).json({ result: true, data: updatedUser });
+
+    // // Check if the user is a shared user trip
+    // if (trip.shareWith.includes(user._id.toString())) {
+    //   console.log("shared trip");
+    //   trip.shareWith = trip.shareWith.filter(
+    //     (userId) => userId.toString() !== user._id.toString()
+    //   );
+    //   await trip.save();
+
+    //   console.log("user trips", user.trips[1]._id.toString());
+    //   console.log("trip id", trip._id.toString());
+    //   const userUpdate = await User.updateOne(
+    //     { _id: user._id },
+    //     { $pull: { trips: trip._id } }
+    //   );
+
+    //   userUpdate.save();
+
+    //   const updatedUser = await User.findById(user._id).populate({
+    //     path: "trips",
+    //     populate: { path: "sos_infos" },
+    //   });
+    //   return res.status(200).json({ result: true, data: updatedUser.trips });
+    // } else {
+    //   await Trip.findByIdAndDelete(tripId);
+
+    //   await User.updateMany(
+    //     { "shareWith.trip": tripId },
+    //     { $pull: { shareWith: { trip: tripId } } }
+    //   );
+
+    //   await User.updateMany({ trips: tripId }, { $pull: { trips: tripId } });
+
+    //   const updatedUser = await User.findById(user._id).populate({
+    //     path: "trips",
+    //     populate: { path: "sos_infos" },
+    //   });
+
+    //   res.status(200).json({ result: true, data: updatedUser.trips });
+    // }
   }
 );
 
@@ -383,6 +436,7 @@ router.put(
       path: "trips",
       populate: { path: "sos_infos" },
     });
+
     if (!user) {
       res.status(401).json({ error: "Unauthorized" });
       return;
@@ -404,8 +458,11 @@ router.put(
     await user.save();
 
     // Send the user's trips
-
-    res.status(200).json({ result: true, trips: user.trips });
+    const updatedUser = await User.findById(user._id).populate({
+      path: "trips",
+      populate: { path: "sos_infos" },
+    });
+    res.status(200).json({ result: true, data: updatedUser.trips });
   }
 );
 

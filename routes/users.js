@@ -51,7 +51,7 @@ router.post(
         token: user.token,
       },
     });
-  }
+  },
 );
 
 async function checkIfUserEmailExist(email) {
@@ -94,7 +94,7 @@ router.post(
         token: user.token,
       },
     });
-  }
+  },
 );
 
 router.get("/me", checkBodyMiddleware(["token"]), async (req, res) => {
@@ -150,7 +150,7 @@ router.put(
         token: user.token,
       },
     });
-  }
+  },
 );
 
 router.post(
@@ -189,7 +189,7 @@ router.post(
       result: true,
       documents: updatedUser.documents,
     });
-  }
+  },
 );
 
 router.get("/documents/:token", async (req, res) => {
@@ -224,7 +224,7 @@ router.delete(
     }
 
     user.documents = user.documents.filter(
-      (document) => document._id != documentId
+      (document) => document._id != documentId,
     );
     await user.save();
 
@@ -233,7 +233,7 @@ router.delete(
       result: true,
       documents: updatedUser.documents,
     });
-  }
+  },
 );
 
 router.delete(
@@ -254,7 +254,7 @@ router.delete(
     res.json({
       result: true,
     });
-  }
+  },
 );
 
 module.exports = router;

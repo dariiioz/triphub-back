@@ -64,7 +64,7 @@ router.post(
     });
 
     res.status(200).json({ result: true, data: user.trips });
-  }
+  },
 );
 
 router.get("/getTrips/:token", async (req, res) => {
@@ -124,12 +124,12 @@ router.delete(
       result = await Trip.findByIdAndDelete(tripId);
       await User.updateMany(
         { "shareWith.trip": tripId },
-        { $pull: { shareWith: { trip: tripId } } }
+        { $pull: { shareWith: { trip: tripId } } },
       );
       await User.updateMany({ trips: tripId }, { $pull: { trips: tripId } });
     } else {
       trip.shareWith = trip.shareWith.filter(
-        (userId) => userId.toString() !== user._id.toString()
+        (userId) => userId.toString() !== user._id.toString(),
       );
       await trip.save();
       await User.updateOne({ _id: user._id }, { $pull: { trips: tripId } });
@@ -181,7 +181,7 @@ router.delete(
 
     //   res.status(200).json({ result: true, data: updatedUser.trips });
     // }
-  }
+  },
 );
 
 router.post(
@@ -232,7 +232,7 @@ router.post(
       populate: { path: "sos_infos" },
     });
     res.status(200).json({ result: true, data: updatedUser.trips });
-  }
+  },
 );
 
 router.delete(
@@ -266,12 +266,12 @@ router.delete(
 
     // Delete the activity
     trip.activities = trip.activities.filter(
-      (activity) => activity._id.toString() !== activityId.toString()
+      (activity) => activity._id.toString() !== activityId.toString(),
     );
     await trip.save();
 
     res.status(200).json({ result: true, trip: trip });
-  }
+  },
 );
 
 router.put(
@@ -341,7 +341,7 @@ router.put(
       });
 
     res.status(200).json({ result: true, data: updateUser.trips });
-  }
+  },
 );
 
 router.put(
@@ -381,7 +381,7 @@ router.put(
     await trip.save();
 
     res.status(200).json({ result: true, trip: trip });
-  }
+  },
 );
 
 router.delete(
@@ -421,7 +421,7 @@ router.delete(
     await trip.save();
 
     res.status(200).json({ result: true, trip: trip });
-  }
+  },
 );
 
 router.put(
@@ -463,7 +463,7 @@ router.put(
       populate: { path: "sos_infos" },
     });
     res.status(200).json({ result: true, data: updatedUser.trips });
-  }
+  },
 );
 
 router.post("/uploadImage", async (req, res) => {
@@ -527,7 +527,7 @@ router.put(
       });
 
     res.status(200).json({ result: true, data: updateUser.trips });
-  }
+  },
 );
 
 function generateInvitationCode(length = 8) {
